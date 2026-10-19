@@ -686,10 +686,11 @@ int Value_convertDec(Value *S,const char *p,int nbits)
     /*
      * Value is short enough to fit into 32 bit value
      */
-    if (S->nbits == 0)
-      Value_reinit(S,SSWORDSIZE);
-    else
-      Value_reinit(S,nbits);
+    Value_reinit(S,nbits ? nbits : SSWORDSIZE);
+    /* A short decimal can have a multiword declared width (e.g. 65'd0).
+     * Clear every word before setting the low word; reused or newly allocated
+     * upper words otherwise become part of the parsed value. */
+    Value_zero(S);
 
     if (sscanf(p,"%u",&n) != 1) {
       *S->one = *S->zero = *S->flt = 0;
