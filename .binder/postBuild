@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+task_root="$PWD"
+task_prefix="$HOME/.local/tkgate"
+task_config="$HOME/.cache/tkgate-tcl-config"
+mkdir -p "$task_config/lib" m4
+ln -sf "/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)/tcl8.6/tclConfig.sh" "$task_config/lib/tclConfig.sh"
+ln -sf "/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)/tk8.6/tkConfig.sh" "$task_config/lib/tkConfig.sh"
+sh autogen.sh
+CFLAGS='-O2 -std=gnu99 -fcommon' ./configure --prefix="$task_prefix" --with-tcltk="$task_config"
+make -j2
+make install
+python3 macos/test.py --prefix "$task_prefix"
+cc -Isrc/common test/common/hash_pointer.c src/common/hash.c -o /tmp/tkgate-hash-test
+/tmp/tkgate-hash-test
+cc -O0 -g -fsanitize=address,undefined -fno-sanitize-recover=all -Isrc/common test/common/ycmalloc_pool.c src/common/ycmalloc.c -o /tmp/tkgate-pool-test
+/tmp/tkgate-pool-test
+mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications" "$HOME/.config/autostart" "$HOME/Desktop" "$HOME/Circuits"
+cat > "$HOME/.local/bin/tkgate-binder" <<'LAUNCH'
+#!/usr/bin/env bash
+set -euo pipefail
+export TKGATE_HOME="$HOME/.local/tkgate/share/tkgate"
+cd "$HOME/Circuits"
+exec "$HOME/.local/tkgate/bin/tkgate" "$@"
+LAUNCH
+chmod +x "$HOME/.local/bin/tkgate-binder"
+cat > "$HOME/.local/share/applications/tkgate.desktop" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=TkGate
+Comment=Digital circuit editor and simulator
+Exec=$HOME/.local/bin/tkgate-binder
+Terminal=false
+Categories=Education;Science;
+DESKTOP
+cp "$HOME/.local/share/applications/tkgate.desktop" "$HOME/.config/autostart/"
+install -m 755 "$HOME/.local/share/applications/tkgate.desktop" "$HOME/Desktop/tkgate.desktop"
+cp "$task_root/.binder/USER-GUIDE.md" "$HOME/Desktop/READ-ME.txt"
+ln -sfn "$task_prefix/share/tkgate/locale/en/examples" "$HOME/Desktop/Examples"

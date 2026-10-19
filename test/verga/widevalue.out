@@ -1,0 +1,6 @@
+zero: PASS
+high bit: PASS
+decimal: 18446744073709551616
+unknown: x
+high impedance: x
+wide index: 1

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=TkGate
+Comment=Digital circuit editor and simulator
+Exec=/opt/tkgate/bin/tkgate %F
+Terminal=false
+Categories=Education;Science;Electronics;
