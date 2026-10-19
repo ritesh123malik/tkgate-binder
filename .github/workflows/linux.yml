@@ -1,0 +1,20 @@
+name: Linux Binder build
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential autoconf automake libtool libtool-bin bison flex tcl8.6-dev tk8.6-dev libx11-dev
+      - name: Run Binder build and regressions
+        run: bash .binder/postBuild
+      - name: Diagnose wide-value regression
+        if: failure()
+        run: |
+          "$HOME/.local/tkgate/bin/verga" -q test/verga/widevalue.v
